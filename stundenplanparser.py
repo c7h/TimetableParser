@@ -38,8 +38,8 @@ except ImportError:
 
 class Fach(object):
     def __init__(self, name, dozent, kurzfrom):
-        self.name = name
-        self.dozent = dozent
+        self.name = name.encode("utf-8")
+        self.dozent = dozent.encode("utf-8")
         self.kurzform = kurzfrom
 
         
@@ -75,7 +75,6 @@ class Termin(object):
 class Timetableparser(object):
     
     def __init__(self):
-        self.filepath_01 = "/home/christoph/Dropbox/Informatik Semester 1/Austauschordner/stundenplan_reply_02_events_07.json"
         self.__faecher = set()
         self.__termine = []
         
