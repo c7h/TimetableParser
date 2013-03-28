@@ -44,7 +44,7 @@ class Fach(object):
 
         
     def __repr__(self, *args, **kwargs):
-        return "Fach %s von %s" % (self.name, self.dozent)
+        return "%s bei %s" % (self.name, self.dozent)
     
     def __eq__(self, other):
         #have to use both __hash__ and __eq__ to get set() working
