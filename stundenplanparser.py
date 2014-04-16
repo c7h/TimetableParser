@@ -1,21 +1,18 @@
 '''
 Created on 28.03.2013
 
-Elegance is not a dispensable luxury but a factor that decides between success and failure.
-~Edsger Dijkstra
-
-
 @note: Possible spelling errors are due to the wine.
 
 @author: Christoph Gerneth
 '''
 
 import json
-from datetime import datetime
+from datetime import datetime, date
 import urllib
 import urllib2
 import re
 import sys
+
 
 
 try:
@@ -77,10 +74,10 @@ class Timetableparser(object):
         self.__termine = []
         
     def read(self, username, password, fh):
-        data = self.__parseHTML(username, password, fh)
+        semester_id = self.getSemesterIDforDate()
+        
+        data = self.__parseHTML(username, password, semester_id, fh)
         faecher = json.loads(data)
-        #with open(self.filepath_01) as f:
-        #    faecher = json.load(f)
 
         for fach in faecher["events7"]:
             try:
@@ -99,10 +96,28 @@ class Timetableparser(object):
             self.__faecher.add(Fach(name, dozent, kurzform))
             subject = self.__faecher.intersection(set([Fach(name, dozent, kurzform)]))
             term = Termin(subject, datum, zeitvon, zeitbis, raum, kommentar)
-            print "parsed", term
+            #print "parsed", term
             self.__termine.append(term)
-          
-    def __parseHTML(self, username, password, fh="fhin"):
+    
+    def getSemesterIDforDate(self, sem_date=datetime.today()):
+        '''calculate semester-id. Value changes for every semester'''
+        today = sem_date
+        
+        ws = date(today.year, 9, 30)
+        ss = date(today.year, 3, 15)
+        semester_id = today.year - 1992 #offset
+        
+        if ss <= today <= ws:
+            #sommersemester
+            semester_id += 1
+        elif ws < today:
+            #naechstes semester im jahr
+            semester_id += 2
+                  
+        return semester_id
+        
+        
+    def __parseHTML(self, username, password, semester_id, fh="fhin"):
         
         url = "https://hiplan.haw-ingolstadt.de/stpl/index.php?FH=%s&Language=" % fh
         values = {"User": username,
@@ -119,7 +134,7 @@ class Timetableparser(object):
         
         
         post2 = "https://hiplan.haw-ingolstadt.de/stpl/index.php?FH=%s&User=%s&Session=%s&Language=&sem=%s&mode=cbGridWochenplanDaten&pers=undefined"\
-        % (fh, username, session_id, "23")
+        % (fh, username, session_id, semester_id)
         
         req2 = urllib2.Request(post2)
         response2 = urllib2.urlopen(req2)
@@ -146,7 +161,7 @@ class ICal(object):
     version = '2.0'
     def __init__(self, data_in, owner = "Student"):
         cal = Calendar()
-        cal.add('prodid', '-//Stundenplan von %s //haw-ingolstadt.de//' % owner)
+        cal.add('prodid', '-//Stundenplan von %s //thi.de//' % owner)
         cal.add('description', "Stundenplan")
         cal.add('version', self.version)
         self.cal = cal
