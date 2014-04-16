@@ -4,8 +4,6 @@ Created on 28.03.2013
 Elegance is not a dispensable luxury but a factor that decides between success and failure.
 ~Edsger Dijkstra
 
-we don't need no education
-~Pink Floyd
 
 @note: Possible spelling errors are due to the wine.
 
@@ -107,8 +105,6 @@ class Timetableparser(object):
     def __parseHTML(self, username, password, fh="fhin"):
         
         url = "https://hiplan.haw-ingolstadt.de/stpl/index.php?FH=%s&Language=" % fh
-        #login:
-        #post1 = "https://hiplan.haw-ingolstadt.de/stpl/index.php?FH=fhin&Language="
         values = {"User": username,
                 "userPassword": password,
                 "mode": "login",
@@ -120,11 +116,10 @@ class Timetableparser(object):
         the_page = response.read()
         
         session_id = re.findall(r"Session=[A-Za-z0-9]*", the_page)[0].split("=")[1]
-        #searchfor indexLink = 'index.php?FH=fhin&User=if1184&Session=1949497227663a57554q878zcsjovoskqu71xi9z3w14vlsywg
         
         
         post2 = "https://hiplan.haw-ingolstadt.de/stpl/index.php?FH=%s&User=%s&Session=%s&Language=&sem=%s&mode=cbGridWochenplanDaten&pers=undefined"\
-        % (fh, username, session_id, "21")
+        % (fh, username, session_id, "23")
         
         req2 = urllib2.Request(post2)
         response2 = urllib2.urlopen(req2)
@@ -148,11 +143,14 @@ class Timetableparser(object):
                 yield termin
 
 class ICal(object):
+    version = '2.0'
     def __init__(self, data_in, owner = "Student"):
+        cal = Calendar()
+        cal.add('prodid', '-//Stundenplan von %s //haw-ingolstadt.de//' % owner)
+        cal.add('description', "Stundenplan")
+        cal.add('version', self.version)
+        self.cal = cal
         self.data = data_in
-        self.cal = Calendar()
-        self.cal.add('prodid', '-//Stundenplan von %s //haw-ingolstadt.de//' % owner)
-        self.cal.add('description', "Stundenplan")
     
     def write(self, output_file):
         for term in self.data:
