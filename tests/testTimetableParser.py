@@ -4,7 +4,7 @@ Created on 16.04.2014
 @author: christoph
 '''
 import unittest
-from stundenplanparser import Timetableparser
+from stundenplanparser.stundenplanparser import Timetableparser
 from datetime import date
 
 class Test(unittest.TestCase):
