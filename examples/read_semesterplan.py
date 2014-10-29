@@ -7,6 +7,7 @@ import os
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.sys.path.insert(0,parentdir)
 
+import getpass
 from optparse import OptionParser
 from datetime import datetime
 
@@ -18,11 +19,16 @@ usage = """
 Zeige deinen Tagesstundenplan an
 """
 parser = OptionParser(usage=usage)
-parser.add_option("-u", "--user", dest="user", help="your Username (e.g. if1184")
-parser.add_option("-p", "--pass", dest="passwd", help="your password")
+parser.add_option("-u", "--user", dest="user", default=None,  help="your Username (e.g. if1184)")
+parser.add_option("-p", "--pass", dest="passwd", default=None,  help="your password")
 parser.add_option("-f", dest="university", default="fhin", help="the university. e.g. fhin for Ingolstadt")
 
 (options, args) = parser.parse_args()
+
+if not options.user:
+    options.user = raw_input("username: ")
+if not options.passwd:
+    options.passwd = getpass.getpass()
 
 x = Timetableparser()
 x.read(options.user, options.passwd, options.university)
@@ -32,7 +38,7 @@ print "Deine Faecher dieses Semester:"
 for num, subs in enumerate(x.subjects):
     print "%02i: %s" % (num, subs)
 print
-    
+
 print "Heute auf dem Plan:"
 table_today = []
 for term in x.getTermsByDate(datetime.today().date()):
