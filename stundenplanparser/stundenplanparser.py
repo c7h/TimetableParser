@@ -62,7 +62,7 @@ class Timetableparser(object):
         data = self.__parseHTML(username, password, semester_id, fh)
         faecher = json.loads(data)
 
-        for fach in faecher["events7"]:
+        for fach in faecher["events"]:
             try:
                 f = fach[20]
                 raum = f["raeume"].replace("in ", "")
