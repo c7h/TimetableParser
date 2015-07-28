@@ -57,9 +57,7 @@ class Timetableparser(object):
         self.__termine = []
         
     def read(self, username, password, fh):
-        semester_id = self.getSemesterIDforDate()
-        
-        data = self.__parseHTML(username, password, semester_id, fh)
+        data = self.__parseHTML(username, password, fh)
         faecher = json.loads(data)
 
         for fach in faecher["events"]:
@@ -82,27 +80,10 @@ class Timetableparser(object):
             #print "parsed", term
             self.__termine.append(term)
     
-    def getSemesterIDforDate(self, sem_date=datetime.today().date()):
-        '''calculate semester-id. Value changes for every semester. @param sem_date: datetime.date()-object'''
-        today = sem_date
+
+    def __parseHTML(self, username, password, fh="fhin"):
         
-        ws = date(today.year, 9, 30)
-        ss = date(today.year, 3, 15)
-        semester_id = today.year - 1992 #offset
-        
-        if ss <= today <= ws:
-            #sommersemester
-            semester_id += 1
-        elif ws < today:
-            #naechstes semester im jahr
-            semester_id += 2
-                  
-        return semester_id
-        
-        
-    def __parseHTML(self, username, password, semester_id, fh="fhin"):
-        
-        url = "https://hiplan.haw-ingolstadt.de/stpl/index.php?FH=%s&Language=" % fh
+        url = "https://www2.primuss.de/stpl/index.php?FH=%s&Language=" % fh
         values = {"User": username,
                 "userPassword": password,
                 "mode": "login",
@@ -113,10 +94,10 @@ class Timetableparser(object):
         response = urllib2.urlopen(req)
         the_page = response.read()
         
-        session_id = re.findall(r"Session=[A-Za-z0-9]*", the_page)[0].split("=")[1]
+        session_id = re.findall(r"Session\" value=\"[A-Za-z0-9]*", the_page)[0].split("=\"")[1]
+        semester_id = re.findall(r"sem=[0-9]*", the_page)[0].split("=")[1]
         
-        
-        post2 = "https://hiplan.haw-ingolstadt.de/stpl/index.php?FH=%s&User=%s&Session=%s&Language=&sem=%s&mode=cbGridWochenplanDaten&pers=undefined"\
+        post2 = "https://www2.primuss.de/stpl/index.php?FH=%s&User=%s&Session=%s&Language=&sem=%s&mode=cbGridWochenplanDaten&pers=undefined"\
         % (fh, username, session_id, semester_id)
         
         req2 = urllib2.Request(post2)
