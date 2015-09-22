@@ -8,9 +8,8 @@ Created on 28.03.2013
 
 import json
 from datetime import datetime, date
-import urllib
-import urllib2
 import re
+import requests
 
 
 
@@ -49,6 +48,8 @@ class Termin(object):
         bis = datetime.strftime(self.zeit_bis, "%H:%M")
         return "%-15s von %s bis %s Uhr: %s" % (date, von, bis, self.fach)
     
+class LoginFailedException(Exception):
+    pass
 
 class Timetableparser(object):
     
@@ -58,6 +59,7 @@ class Timetableparser(object):
         
     def read(self, username, password, fh):
         data = self.__parseHTML(username, password, fh)
+        
         faecher = json.loads(data)
 
         for fach in faecher["events"]:
@@ -83,26 +85,45 @@ class Timetableparser(object):
 
     def __parseHTML(self, username, password, fh="fhin"):
         
-        url = "https://www2.primuss.de/stpl/index.php?FH=%s&Language=" % fh
-        values = {"User": username,
-                "userPassword": password,
+        url = "https://www2.primuss.de/stpl/login.php"
+        values = {
+                "user": username,
+                "pwd": password,
                 "mode": "login",
-                "submitLogin":"Anmelden"}
+                "fh": fh,
+                "lang": "de",
+                "submitLogin":"Anmelden"
+                }
         
-        data = urllib.urlencode(values)
-        req = urllib2.Request(url, data)
-        response = urllib2.urlopen(req)
-        the_page = response.read()
-        
-        session_id = re.findall(r"Session\" value=\"[A-Za-z0-9]*", the_page)[0].split("=\"")[1]
+        response = requests.post(url, data=values, params={"FH": fh, "Lang": "de"})
+        the_page = response.text
+
+        session_id_list = re.findall(r"(?:name\=\"Session\".{1,5}value\=\")([A-Za-z0-9]+)(?:\")", the_page)
+        if len(session_id_list) == 0:
+            #no session_id found... login failed?
+            raise LoginFailedException("could not login")
+        else:
+            session_id = session_id_list.pop()
+
         semester_id = re.findall(r"sem=[0-9]*", the_page)[0].split("=")[1]
         
-        post2 = "https://www2.primuss.de/stpl/index.php?FH=%s&User=%s&Session=%s&Language=&sem=%s&mode=cbGridWochenplanDaten&pers=undefined"\
-        % (fh, username, session_id, semester_id)
-        
-        req2 = urllib2.Request(post2)
-        response2 = urllib2.urlopen(req2)
-        output = response2.read()
+        post2_get_params = {
+                "FH":fh, 
+                "sem": semester_id, 
+                "method": "list", 
+                "Language": "",
+                }
+
+        form_data = {"showdate":"9/30/2015",
+                    "viewtype":"week",
+                    "timezone":"-5",
+                    "Session":session_id,
+                    "User":username,
+                    "mode":"calendar",
+                    "pers":"",}
+
+        post2 = requests.post("https://www3.primuss.de/stpl/index.php", params=post2_get_params, data=form_data)
+        output = post2.text
         
         return output
         
@@ -120,7 +141,4 @@ class Timetableparser(object):
         for termin in self.__termine:
             if termin.date == date:
                 yield termin
-
-
-    
 
